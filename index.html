@@ -42,6 +42,7 @@ pre{white-space:pre-wrap;font:14px/1.4 ui-monospace,monospace;background:#f3f6f8
 .err{padding:40px 16px;text-align:center}
 .big{font-size:19px;min-height:60px}
 .pdfok{background:#eaf6fb;border-color:#bfe3f2}
+.subt{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:15px;font-weight:600;color:var(--ink)}.subt input{width:24px;height:24px;min-height:0;accent-color:var(--petrol)}
 </style>
 </head>
 <body>
@@ -89,9 +90,11 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
  const PH=["Clean out","Demo","Plumbing","Electrical"],nk=t=>String(t||"").toLowerCase().replace(/[^a-z]/g,"");
  const ph=t=>{const k=nk(t);return PH.findIndex(p=>{const q=nk(p);return k===q||k===q+"s"||(q==="demo"&&k==="demolition")||(q==="cleanout"&&(k==="trashout"||k==="cleanup"))})};
  const xs=S.x.filter(x=>x.d.trim()||num(x.l)).map((x,k)=>({...x,k}));
- const ents=B.r.map((r,i)=>({room:r,i,rank:ph(r[0])<0?100:ph(r[0]),adds:[]}));const loose=[];
+ const ORD=["Exterior","Clean out","Demo","Plumbing","Electrical","Kitchen","Living room","Bedroom","Bathroom","Half bath"];
+ const rk=name=>{const p=ph(name);if(p>=0)return ORD.indexOf(PH[p]);const nm=String(name||"").toLowerCase();const i=ORD.findIndex(o=>nm===o.toLowerCase()||nm.startsWith(o.toLowerCase()+" "));return i<0?100:i};
+ const ents=B.r.map((r,i)=>({room:r,i,rank:rk(r[0]),adds:[]}));const loose=[];
  for(const x of xs){const a=nk(x.a);const e=a&&ents.find(e=>e.room&&nk(e.room[0])===a);if(e){e.adds.push(x);continue}
-  const p=ph(x.a);if(p>=0){let g=ents.find(e=>!e.room&&e.rank===p);if(!g){g={name:PH[p],rank:p,adds:[]};ents.push(g)}g.adds.push(x);continue}loose.push(x)}
+  const p=ph(x.a);if(p>=0){const rp=ORD.indexOf(PH[p]);let g=ents.find(e=>!e.room&&e.rank===rp);if(!g){g={name:PH[p],rank:rp,adds:[]};ents.push(g)}g.adds.push(x);continue}loose.push(x)}
  ents.forEach((e,o)=>e.o=o);ents.sort((a,b)=>a.rank-b.rank||a.o-b.o);
  const addRow=x=>{const ls=wrap(x.d.trim()||"Additional work",C[3]-C[2]-10),h=Math.max(ls.length*11.5+10,24);need(h);
    pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,color:P.rgb(1,.976,.92),borderColor:line,borderWidth:.6});[C[2],C[3]].forEach(xx=>pg.drawLine({start:{x:xx,y},end:{x:xx,y:y-h},thickness:.6,color:line}));
@@ -99,11 +102,11 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
    fld("addArea|"+x.k,C[0]+1,y-h+1,1,1,x.a.trim());fld("addDesc|"+x.k,C[0]+3,y-h+1,1,1,x.d.trim()||"Additional work");fld("addLabor|"+x.k,C[3]+4,y-21,C[4]-C[3]-8,16,num(x.l)?money(num(x.l)):"$0");y-=h};
  let n=0;
  for(const e of ents){n++;
-  if(e.room){const r=e.room,i=e.i;const desc=[r[1],r[2]&&r[2].length?"Includes: "+r[2].join(", ")+".":""].filter(Boolean).join("\n")||"Per walkthrough";
+  if(e.room){const r=e.room,i=e.i,sb=S.sub[i]&&S.sub[i].on?S.sub[i]:null;const desc=[r[1],r[2]&&r[2].length?"Includes: "+r[2].join(", ")+".":"",sb?"SUBCONTRACTED"+(sb.name&&sb.name.trim()?" — "+sb.name.trim():""):""].filter(Boolean).join("\n")||"Per walkthrough";
    const ls=wrap(desc,C[3]-C[2]-10),an=wrap(r[0],C[2]-C[1]-10,9.5,FB),h=Math.max(Math.max(ls.length,an.length)*11.5+10,26);need(h);
    pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-h},thickness:.6,color:line}));
    T(String(n),C[0]+8,y-14,{size:9.5});an.forEach((l,k)=>T(l,C[1]+5,y-14-k*11.5,{bold:true,size:9.5}));ls.forEach((l,k)=>T(l,C[2]+5,y-14-k*11.5,{size:9.5}));
-   const v=num(S.p[i]);fld("labor|"+(r[3]||i),C[3]+4,y-22,C[4]-C[3]-8,16,v?money(v):"$0");y-=h}
+   const v=num(S.p[i]);fld("labor|"+(r[3]||i),C[3]+4,y-22,C[4]-C[3]-8,16,v?money(v):"$0");if(sb)fld("sub|"+(r[3]||i),C[0]+5,y-h+1,1,1,(sb.name||"").trim()||"yes");y-=h}
   else{need(26);pg.drawRectangle({x:L,y:y-24,width:R-L,height:24,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-24},thickness:.6,color:line}));
    T(String(n),C[0]+8,y-15,{size:9.5});T(e.name,C[1]+5,y-15,{bold:true,size:9.5});T("Added by contractor",C[2]+5,y-15,{size:9.5,color:mute});y-=24}
   e.adds.forEach(addRow)}
@@ -119,7 +122,7 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
  return doc.save()}
 const fname=()=>("Labor-Bid_"+(B.a||"property").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")+".pdf");
 function summary(){const out=[`LABOR BID ${B.id} — ${B.a}`,""];
- B.r.forEach((r,i)=>out.push(`${i+1}. ${r[0]} - ${num(S.p[i])?Math.round(num(S.p[i])):0}`));
+ B.r.forEach((r,i)=>{out.push(`${i+1}. ${r[0]} - ${num(S.p[i])?Math.round(num(S.p[i])):0}`);const sb=S.sub[i];if(sb&&sb.on)out.push(`   (subbing out${sb.name&&sb.name.trim()?" to "+sb.name.trim():""})`)});
  const xs=S.x.filter(x=>x.d.trim()||num(x.l));if(xs.length){out.push("");xs.forEach(x=>out.push(`+ ${x.a.trim()?x.a.trim()+": ":""}${x.d.trim()||"Additional work"} - ${Math.round(num(x.l))}`))}
  out.push("",`Total labor - ${Math.round(total())}`);if(S.days)out.push(`Timeline ${S.days} working days`);if(S.start)out.push(`Start: ${S.start}`);
  if(S.notes.trim())out.push(`Notes: ${S.notes.trim().replace(/\n+/g," ")}`);if(S.name.trim())out.push(`— ${S.name.trim()}`);return out.join("\n")}
@@ -127,7 +130,9 @@ function render(){
  $("#app").innerHTML=`${B.portal?'<button class="btn sec" id="back" style="margin-top:0">← All my properties</button>':""}<div class="card facts">${B.du?`<div>Need it by <b>${esc(B.du)}</b></div>`:""}${B.ac?`<div>Access: <b>${esc(B.ac)}</b></div>`:""}${B.who?`<div>From: <b>${esc(B.who)}</b></div>`:""}</div>
  <div class="card how"><b>How this works:</b> read each area, type your labor price in its yellow box, add anything we missed at the bottom, then tap <b>Finish &amp; send</b> to get your bid as a PDF to send us. Your numbers save on this phone as you go.</div>
  ${B.r.map((r,i)=>`<div class="room"><div class="rh">${i+1}. ${esc(r[0])}</div><div class="rb">${r[1]?`<p class="work">${esc(r[1])}</p>`:""}${r[2]&&r[2].length?`<p class="inc">Includes: ${esc(r[2].join(", "))}</p>`:""}
-  <label for="p${i}">Labor $ for ${esc(r[0])}</label><input id="p${i}" data-i="${i}" inputmode="decimal" enterkeyhint="next" value="${esc(S.p[i]??"")}" placeholder="0"></div></div>`).join("")}
+  <label for="p${i}">Labor $ for ${esc(r[0])}</label><input id="p${i}" data-i="${i}" inputmode="decimal" enterkeyhint="next" value="${esc(S.p[i]??"")}" placeholder="0">
+  <label class="subt"><input type="checkbox" data-sub="${i}" ${S.sub[i]&&S.sub[i].on?"checked":""}> I'm subbing this out</label>
+  ${S.sub[i]&&S.sub[i].on?`<input data-subn="${i}" value="${esc(S.sub[i].name||"")}" placeholder="Sub's name / company (optional)" style="text-align:left;font-size:16px;min-height:46px;margin-top:6px">`:""}</div></div>`).join("")}
  <datalist id="areas">${["Clean out","Demo","Plumbing","Electrical"].concat(B.r.map(r=>r[0])).filter((v,i,a)=>a.indexOf(v)===i).map(v=>`<option value="${esc(v)}">`).join("")}</datalist><div class="card"><b>Anything we missed?</b><div id="xs">${S.x.map((x,k)=>`<div class="add"><label for="xa${k}">Area</label><input id="xa${k}" data-x="${k}" data-f="a" value="${esc(x.a)}" placeholder="Pick or type: Clean out, Demo, Kitchen…" list="areas">
   <div class="two"><div><label for="xd${k}">What needs done</label><input id="xd${k}" data-x="${k}" data-f="d" value="${esc(x.d)}"></div><div><label for="xl${k}">Labor $</label><input id="xl${k}" data-x="${k}" data-f="l" inputmode="decimal" value="${esc(x.l)}" placeholder="0"></div></div>
   <button class="x" data-rm="${k}">Remove</button></div>`).join("")}</div><button class="btn plus" id="addx">+ Add something we missed</button></div>
@@ -144,10 +149,11 @@ function render(){
 function totals(){$("#tot").textContent=money(total());const blank=B.r.filter((_,i)=>!String(S.p[i]??"").trim()).length;const c=$("#chk");if(c)c.textContent=blank?`${blank} area${blank===1?"":"s"} still blank — fine if $0.`:""}
 function openBid(b0){B=b0;$("#addr").textContent=B.a||"Labor Bid";document.title="Bid — "+(B.a||"");window.scrollTo(0,0);
 
- key="bid-"+B.id;try{S=JSON.parse(localStorage.getItem(key))}catch{}S=S||{};S.p=S.p||{};S.x=S.x||[];S.days=S.days||"";S.start=S.start||"";S.notes=S.notes||"";S.name=S.name||B.gc||"";
+ key="bid-"+B.id;try{S=JSON.parse(localStorage.getItem(key))}catch{}S=S||{};S.p=S.p||{};S.x=S.x||[];S.sub=S.sub||{};S.days=S.days||"";S.start=S.start||"";S.notes=S.notes||"";S.name=S.name||B.gc||"";
  render();}
 let wired=false;function wire(){if(wired)return;wired=true;
- document.addEventListener("input",e=>{const d=e.target.dataset;if(d.i!==undefined)S.p[d.i]=e.target.value;else if(d.x!==undefined)S.x[+d.x][d.f]=e.target.value;else if(d.s)S[d.s]=e.target.value;else return;store();totals()});
+ document.addEventListener("change",e=>{const d=e.target.dataset;if(d.sub===undefined)return;S.sub[d.sub]=S.sub[d.sub]||{};S.sub[d.sub].on=e.target.checked;store();render();const n=document.querySelector(`[data-subn="${d.sub}"]`);if(n)n.focus()});
+ document.addEventListener("input",e=>{const d=e.target.dataset;if(d.subn!==undefined){S.sub[d.subn].name=e.target.value;store();return}if(d.i!==undefined)S.p[d.i]=e.target.value;else if(d.x!==undefined)S.x[+d.x][d.f]=e.target.value;else if(d.s)S[d.s]=e.target.value;else return;store();totals()});
  document.addEventListener("click",async e=>{const t=e.target.closest("a,button");if(!t)return;
   if(t.id==="addx"){S.x.push({a:"",d:"",l:""});store();render();$(`#xa${S.x.length-1}`).focus();return}
   if(t.dataset.rm){S.x.splice(+t.dataset.rm,1);store();render();return}
@@ -159,7 +165,7 @@ let wired=false;function wire(){if(wired)return;wired=true;
    if(t.id==="mkpdf"&&B.api&&B.k&&!t.dataset.offline){t.disabled=true;t.textContent="Sending…";
     try{let bin="";for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode(...bytes.subarray(i,i+8192));
      const form={labor:{},add:S.x.filter(x=>x.d.trim()||num(x.l)).map(x=>({area:x.a.trim(),desc:x.d.trim(),labor:String(num(x.l))})),days:S.days,start:S.start,notes:S.notes.trim(),name:S.name.trim(),total:Math.round(total())};
-     B.r.forEach((r,i)=>{form.labor[r[3]||String(i)]=String(num(S.p[i]))});
+     form.subs={};B.r.forEach((r,i)=>{form.labor[r[3]||String(i)]=String(num(S.p[i]));const sb=S.sub[i];if(sb&&sb.on)form.subs[r[3]||String(i)]=(sb.name||"").trim()||"yes"});
      const res=await fetch(B.api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitBid",id:B.id,bidKey:B.k,form,pdf:btoa(bin),pdfName:fname()})});const j=await res.json();
      if(!j.ok)throw new Error(j.error||"Server error");S.sentAt=new Date().toISOString();store();
      $("#out").innerHTML=`<div class="card done" style="font-size:17px">✓ Bid sent to ${esc(B.who||"1HO Holdings")} — ${money(total())} labor. You're all set.<br><span style="font-weight:500;font-size:14px;color:var(--ink)">Need a copy for yourself?</span><button class="btn sec" id="dlpdf">Download your bid PDF</button></div>`;t.textContent="Sent ✓ — tap to resend";t.disabled=false}
