@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Scope of Work — Labor Bid</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f8;--ink:#0b2330;--mute:#567080;--line:#d8e2e8;--petrol:#034B68;--sky:#37ADDB;--ok:#0f7a4b;--y:#fffaf0;--yb:#e0b25a}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.45 Archivo,system-ui,sans-serif;padding-bottom:96px}
+header{background:var(--petrol);color:#fff;padding:18px 16px 16px}
+header small{color:#bfe3f2;font-size:13px;font-weight:700;letter-spacing:.02em}
+header h1{margin:4px 0 0;font-size:22px;line-height:1.2}
+.wrap{max-width:680px;margin:auto;padding:12px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px}
+.facts div{font-size:15px;color:var(--mute)}.facts b{color:var(--ink)}
+.how{background:#fff6e6;border-color:#f3dcaa;font-size:15px}
+.room{background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:12px;overflow:hidden}
+.rh{background:var(--petrol);color:#fff;padding:10px 14px;font-weight:800;font-size:18px}
+.rb{padding:12px 14px}
+.work{white-space:pre-wrap;margin:0 0 6px;font-size:16px}
+.inc{color:var(--mute);font-size:14px;margin:0 0 10px}
+label{display:block;font-size:13px;font-weight:700;color:var(--mute);margin-bottom:4px}
+input,textarea{font:18px Archivo,sans-serif;width:100%;min-height:52px;padding:10px 12px;border:1.5px solid var(--yb);border-radius:10px;background:var(--y);color:var(--ink)}
+input[inputmode=decimal]{text-align:right;font-weight:800}
+input:focus,textarea:focus{outline:3px solid var(--sky);background:#fff}
+textarea{min-height:84px;font-size:16px}
+.add{display:grid;grid-template-columns:1fr;gap:8px;padding:10px 0;border-top:1px solid var(--line)}
+.add .two{display:grid;grid-template-columns:minmax(0,1fr) 130px;gap:8px}
+.x{background:none;border:0;color:#b23a2e;font:600 14px Archivo,sans-serif;justify-self:start;min-height:36px;padding:0}
+.btn{font:800 18px Archivo,sans-serif;min-height:56px;width:100%;border-radius:12px;border:0;background:var(--ok);color:#fff;display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px;cursor:pointer}
+.sec{background:#fff;color:var(--ink);border:1.5px solid var(--line);font-size:16px;min-height:50px}
+.plus{background:#fff;color:var(--petrol);border:1.5px dashed var(--sky);font-size:16px;min-height:50px}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--petrol);color:#fff;padding:12px 16px calc(12px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:center;gap:12px}
+.bar b{font-size:22px;white-space:nowrap}.bar a{background:var(--sky);color:#04293a;font-weight:800;text-decoration:none;padding:10px 14px;border-radius:10px;white-space:nowrap}
+.done{background:#dff5ea;border-color:#9fd9bb;color:var(--ok);font-weight:700}
+.warn{color:#b23a2e;font-size:14px;font-weight:600}
+pre{white-space:pre-wrap;font:14px/1.4 ui-monospace,monospace;background:#f3f6f8;padding:10px;border-radius:8px}
+.err{padding:40px 16px;text-align:center}
+.big{font-size:19px;min-height:60px}
+.pdfok{background:#eaf6fb;border-color:#bfe3f2}
+</style>
+</head>
+<body>
+<header><small id="who">1HO HOLDINGS LLC · SCOPE OF WORK</small><h1 id="addr">Labor Bid</h1></header>
+<div class="wrap" id="app"><p class="err">Loading…</p></div>
+<div class="bar" id="bar" hidden><div><div style="font-size:13px;color:#bfe3f2">Total labor</div><b id="tot">$0</b></div><a href="#finish" id="jump">Finish &amp; send</a></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script>
+const BID_DESK_API="https://script.google.com/macros/s/AKfycbxvNgTlW0NzR8Z_KVaP7UxZ6XTDgzVSoRIIT2oqJtPc2w0oNg0210q9Qj9lRRRPut3U/exec"; /* paste your Apps Script Web app URL here to turn on the contractor portal */
+{
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=parseFloat(String(v??"").replace(/[$,\s]/g,""));return isFinite(n)?n:0};
+const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+let B,S,key;
+async function decode(h){h=h.replace(/^#/,"");const t=h[0],s=h.slice(1).replace(/-/g,"+").replace(/_/g,"/");
+ const bin=Uint8Array.from(atob(s+"===".slice((s.length+3)%4)),c=>c.charCodeAt(0));
+ if(t==="z")return JSON.parse(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text());
+ return JSON.parse(new TextDecoder().decode(bin))}
+const store=()=>{try{localStorage.setItem(key,JSON.stringify(S))}catch{}};
+const total=()=>B.r.reduce((s,_,i)=>s+num(S.p[i]),0)+S.x.reduce((s,x)=>s+num(x.l),0);
+
+const pdfSafe=t=>String(t??"").replace(/[^\n\x20-\x7E -ÿ–—‘’“”•…]/g,"");
+async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
+ const doc=await P.PDFDocument.create(),F=await doc.embedFont(P.StandardFonts.Helvetica),FB=await doc.embedFont(P.StandardFonts.HelveticaBold),form=doc.getForm();
+ const W=612,H=792,L=48,R=W-48,ink=P.rgb(.043,.137,.188),mute=P.rgb(.337,.439,.502),pet=P.rgb(.012,.294,.408),pale=P.rgb(.918,.957,.976),line=P.rgb(.78,.83,.86),white=P.rgb(1,1,1);
+ doc.setTitle(pdfSafe(`Labor Bid — ${B.a}`));doc.setAuthor(pdfSafe(S.name||B.gc||"Contractor"));
+ let pg,y;const pages=[];
+ const T=(t,x,yy,o={})=>pg.drawText(pdfSafe(t),{x,y:yy,size:o.size||10,font:o.bold?FB:F,color:o.color||ink});
+ const RT=(t,xr,yy,o={})=>{const f=o.bold?FB:F,sz=o.size||10;T(t,xr-f.widthOfTextAtSize(pdfSafe(t),sz),yy,o)};
+ const wrap=(t,w,size=9.5,font=F)=>{const out=[];for(const para of pdfSafe(t).split("\n")){let cur="";for(const word of para.split(/\s+/)){const tr=cur?cur+" "+word:word;if(font.widthOfTextAtSize(tr,size)>w&&cur){out.push(cur);cur=word}else cur=tr}out.push(cur)}return out};
+ const fld=(name,x,yy,w,h,val)=>{const f=form.createTextField(name);f.setText(pdfSafe(val||""));f.addToPage(pg,{x,y:yy,width:w,height:h,font:F,textColor:ink,borderWidth:0});f.setFontSize(10);f.setAlignment(P.TextAlignment.Right);return f};
+ const newPage=()=>{pg=doc.addPage([W,H]);pages.push(pg);pg.drawRectangle({x:0,y:H-8,width:W,height:8,color:pet});y=H-40};
+ const C=[L,L+24,L+120,R-90,R];
+ const head=()=>{pg.drawRectangle({x:L,y:y-20,width:R-L,height:20,color:pet});[["#",C[0]+8],["Area",C[1]+5],["Scope of work",C[2]+5]].forEach(([t,x])=>T(t,x,y-14,{bold:true,color:white,size:9.5}));RT("Labor",C[4]-6,y-14,{bold:true,color:white,size:9.5});y-=20};
+ const need=h=>{if(y-h<70){newPage();head()}};
+ const money=n=>"$"+Math.round(n).toLocaleString("en-US");
+ newPage();
+ T("LABOR BID",L,H-52,{bold:true,size:20});T("Contractor's bid on the Scope of Work",L,H-68,{color:mute});
+ RT(S.name||B.gc||"Contractor",R,H-52,{bold:true,size:11});RT("Contractor",R,H-66,{size:9,color:mute});
+ pg.drawLine({start:{x:L,y:H-82},end:{x:R,y:H-82},thickness:.6,color:line});y=H-100;
+ for(const [k,v] of [["Property",B.a],["Prepared for",B.who||"1HO Holdings LLC"],["Date",new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})],["Bid ref",B.id]])if(v){T(k,L,y,{bold:true,color:mute,size:9.5});T(v,L+86,y);y-=15}
+ y-=8;head();
+ B.r.forEach((r,i)=>{const desc=[r[1],r[2]&&r[2].length?"Includes: "+r[2].join(", ")+".":""].filter(Boolean).join("\n")||"Per walkthrough";
+  const ls=wrap(desc,C[3]-C[2]-10),an=wrap(r[0],C[2]-C[1]-10,9.5,FB),h=Math.max(Math.max(ls.length,an.length)*11.5+10,26);need(h);
+  pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-h},thickness:.6,color:line}));
+  T(String(i+1),C[0]+8,y-14,{size:9.5});an.forEach((l,k)=>T(l,C[1]+5,y-14-k*11.5,{bold:true,size:9.5}));ls.forEach((l,k)=>T(l,C[2]+5,y-14-k*11.5,{size:9.5}));
+  const v=num(S.p[i]);fld("labor|"+(r[3]||i),C[3]+4,y-22,C[4]-C[3]-8,16,v?money(v):"$0");y-=h});
+ const xs=S.x.filter(x=>x.d.trim()||num(x.l));
+ if(xs.length){need(26);pg.drawRectangle({x:L,y:y-22,width:R-L,height:22,color:pale});T("ADDED BY CONTRACTOR",L+6,y-15,{bold:true,size:9});y-=22;
+  xs.forEach((x,k)=>{const ls=wrap((x.a.trim()?x.a.trim()+": ":"")+(x.d.trim()||"Additional work"),C[3]-C[1]-10),h=Math.max(ls.length*11.5+10,26);need(h);
+   pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});pg.drawLine({start:{x:C[3],y},end:{x:C[3],y:y-h},thickness:.6,color:line});
+   T("+",C[0]+9,y-14,{bold:true});ls.forEach((l,j)=>T(l,C[1]+5,y-14-j*11.5,{size:9.5}));
+   fld("addArea|"+k,C[0]+1,y-h+1,1,1,x.a.trim());fld("addDesc|"+k,C[0]+3,y-h+1,1,1,x.d.trim()||"Additional work");fld("addLabor|"+k,C[3]+4,y-22,C[4]-C[3]-8,16,num(x.l)?money(num(x.l)):"$0");y-=h})}
+ need(34);pg.drawRectangle({x:L,y:y-28,width:R-L,height:28,color:pet});T("TOTAL LABOR",C[2]+5,y-19,{bold:true,size:12,color:white});RT(money(total()),C[4]-8,y-19,{bold:true,size:13,color:white});
+ const tf=form.createTextField("total");tf.setText(String(Math.round(total())));tf.addToPage(pg,{x:L+1,y:y-27,width:1,height:1,borderWidth:0});y-=44;
+ if(y<200)newPage();
+ for(const [k,v,n] of [["Timeline",S.days?S.days+" working days":"",null],["Earliest start",S.start,"start"],["Notes / exclusions",S.notes.trim(),"notes"]])if(v){T(k,L,y,{bold:true,color:mute,size:9.5});const ls=wrap(v,R-L-110,10);ls.forEach((l,j)=>T(l,L+110,y-j*13));if(n){const f=form.createTextField(n);f.setText(pdfSafe(v));f.addToPage(pg,{x:L,y:y-2,width:1,height:1,borderWidth:0})}y-=ls.length*13+6}
+ y-=24;T("CONTRACTOR",L,y,{bold:true});y-=28;pg.drawLine({start:{x:L,y},end:{x:L+240,y},thickness:.6,color:mute});T(pdfSafe((S.name||B.gc||"")+" · Signature / Date"),L,y-11,{size:8,color:mute});
+ form.updateFieldAppearances(F);
+ pages.forEach((p,i)=>{p.drawText(pdfSafe(`${B.a}  ·  Labor Bid  ·  ${B.id}`),{x:L,y:30,size:8,font:F,color:mute});const t=`Page ${i+1} of ${pages.length}`;p.drawText(t,{x:R-F.widthOfTextAtSize(t,8),y:30,size:8,font:F,color:mute})});
+ return doc.save()}
+const fname=()=>("Labor-Bid_"+(B.a||"property").replace(/[^A-Za-z0-9]+/g,"-").replace(/^-|-$/g,"")+".pdf");
+function summary(){const out=[`LABOR BID ${B.id} — ${B.a}`,""];
+ B.r.forEach((r,i)=>out.push(`${i+1}. ${r[0]} - ${num(S.p[i])?Math.round(num(S.p[i])):0}`));
+ const xs=S.x.filter(x=>x.d.trim()||num(x.l));if(xs.length){out.push("");xs.forEach(x=>out.push(`+ ${x.a.trim()?x.a.trim()+": ":""}${x.d.trim()||"Additional work"} - ${Math.round(num(x.l))}`))}
+ out.push("",`Total labor - ${Math.round(total())}`);if(S.days)out.push(`Timeline ${S.days} working days`);if(S.start)out.push(`Start: ${S.start}`);
+ if(S.notes.trim())out.push(`Notes: ${S.notes.trim().replace(/\n+/g," ")}`);if(S.name.trim())out.push(`— ${S.name.trim()}`);return out.join("\n")}
+function render(){
+ $("#app").innerHTML=`${B.portal?'<button class="btn sec" id="back" style="margin-top:0">← All my properties</button>':""}<div class="card facts">${B.du?`<div>Need it by <b>${esc(B.du)}</b></div>`:""}${B.ac?`<div>Access: <b>${esc(B.ac)}</b></div>`:""}${B.who?`<div>From: <b>${esc(B.who)}</b></div>`:""}</div>
+ <div class="card how"><b>How this works:</b> read each area, type your labor price in its yellow box, add anything we missed at the bottom, then tap <b>Finish &amp; send</b> to get your bid as a PDF to send us. Your numbers save on this phone as you go.</div>
+ ${B.r.map((r,i)=>`<div class="room"><div class="rh">${i+1}. ${esc(r[0])}</div><div class="rb">${r[1]?`<p class="work">${esc(r[1])}</p>`:""}${r[2]&&r[2].length?`<p class="inc">Includes: ${esc(r[2].join(", "))}</p>`:""}
+  <label for="p${i}">Labor $ for ${esc(r[0])}</label><input id="p${i}" data-i="${i}" inputmode="decimal" enterkeyhint="next" value="${esc(S.p[i]??"")}" placeholder="0"></div></div>`).join("")}
+ <div class="card"><b>Anything we missed?</b><div id="xs">${S.x.map((x,k)=>`<div class="add"><label for="xa${k}">Area</label><input id="xa${k}" data-x="${k}" data-f="a" value="${esc(x.a)}" placeholder="e.g. Kitchen, Porch">
+  <div class="two"><div><label for="xd${k}">What needs done</label><input id="xd${k}" data-x="${k}" data-f="d" value="${esc(x.d)}"></div><div><label for="xl${k}">Labor $</label><input id="xl${k}" data-x="${k}" data-f="l" inputmode="decimal" value="${esc(x.l)}" placeholder="0"></div></div>
+  <button class="x" data-rm="${k}">Remove</button></div>`).join("")}</div><button class="btn plus" id="addx">+ Add something we missed</button></div>
+ <div class="card" id="finish"><label for="days">Timeline (working days)</label><input id="days" data-s="days" inputmode="numeric" value="${esc(S.days)}" style="text-align:left">
+  <label for="start" style="margin-top:10px">Earliest start</label><input id="start" data-s="start" type="date" value="${esc(S.start)}">
+  <label for="notes" style="margin-top:10px">Notes / exclusions</label><textarea id="notes" data-s="notes">${esc(S.notes)}</textarea>
+  <label for="name" style="margin-top:10px">Your name</label><input id="name" data-s="name" value="${esc(S.name)}" style="text-align:left">
+  <p class="warn" id="chk"></p>
+  <button class="btn big" id="mkpdf">Finish &amp; send my bid (PDF)</button>
+  <div id="out"></div>
+  <details style="margin-top:12px"><summary style="color:var(--mute);font-size:14px;cursor:pointer">Other ways to send</summary>
+  ${B.to?`<a class="btn sec" id="email" href="#">Send as an email (no PDF)</a>`:""}${B.sms?`<a class="btn sec" id="sms" href="#">Send as a text (no PDF)</a>`:""}<button class="btn sec" id="copy">Copy my bid</button></details></div>`;
+ $("#bar").hidden=false;totals()}
+function totals(){$("#tot").textContent=money(total());const blank=B.r.filter((_,i)=>!String(S.p[i]??"").trim()).length;const c=$("#chk");if(c)c.textContent=blank?`${blank} area${blank===1?"":"s"} still blank — fine if $0.`:""}
+function openBid(b0){B=b0;$("#addr").textContent=B.a||"Labor Bid";document.title="Bid — "+(B.a||"");window.scrollTo(0,0);
+
+ key="bid-"+B.id;try{S=JSON.parse(localStorage.getItem(key))}catch{}S=S||{};S.p=S.p||{};S.x=S.x||[];S.days=S.days||"";S.start=S.start||"";S.notes=S.notes||"";S.name=S.name||B.gc||"";
+ render();}
+let wired=false;function wire(){if(wired)return;wired=true;
+ document.addEventListener("input",e=>{const d=e.target.dataset;if(d.i!==undefined)S.p[d.i]=e.target.value;else if(d.x!==undefined)S.x[+d.x][d.f]=e.target.value;else if(d.s)S[d.s]=e.target.value;else return;store();totals()});
+ document.addEventListener("click",async e=>{const t=e.target.closest("a,button");if(!t)return;
+  if(t.id==="addx"){S.x.push({a:"",d:"",l:""});store();render();$(`#xa${S.x.length-1}`).focus();return}
+  if(t.dataset.rm){S.x.splice(+t.dataset.rm,1);store();render();return}
+  if(t.id==="jump"){e.preventDefault();$("#finish").scrollIntoView({behavior:"smooth"});return}
+  if(t.id==="mkpdf"||t.id==="share"||t.id==="dlpdf"){e.preventDefault();const blank=B.r.filter((_,i)=>!String(S.p[i]??"").trim()).length;
+   let bytes;try{bytes=await bidPdf()}catch(z){$("#out").innerHTML='<div class="card warn">Couldn\'t build the PDF — check your connection and try again, or use "Other ways to send".</div>';return}
+   const file=new File([bytes],fname(),{type:"application/pdf"});window.__lastPdf=bytes;
+   const canShare=navigator.canShare&&navigator.canShare({files:[file]});
+   if(t.id==="mkpdf"&&B.api&&B.k&&!t.dataset.offline){t.disabled=true;t.textContent="Sending…";
+    try{let bin="";for(let i=0;i<bytes.length;i+=8192)bin+=String.fromCharCode(...bytes.subarray(i,i+8192));
+     const form={labor:{},add:S.x.filter(x=>x.d.trim()||num(x.l)).map(x=>({area:x.a.trim(),desc:x.d.trim(),labor:String(num(x.l))})),days:S.days,start:S.start,notes:S.notes.trim(),name:S.name.trim(),total:Math.round(total())};
+     B.r.forEach((r,i)=>{form.labor[r[3]||String(i)]=String(num(S.p[i]))});
+     const res=await fetch(B.api,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"submitBid",id:B.id,bidKey:B.k,form,pdf:btoa(bin),pdfName:fname()})});const j=await res.json();
+     if(!j.ok)throw new Error(j.error||"Server error");S.sentAt=new Date().toISOString();store();
+     $("#out").innerHTML=`<div class="card done" style="font-size:17px">✓ Bid sent to ${esc(B.who||"1HO Holdings")} — ${money(total())} labor. You're all set.<br><span style="font-weight:500;font-size:14px;color:var(--ink)">Need a copy for yourself?</span><button class="btn sec" id="dlpdf">Download your bid PDF</button></div>`;t.textContent="Sent ✓ — tap to resend";t.disabled=false}
+    catch(z){t.disabled=false;t.textContent="Finish & send my bid (PDF)";t.dataset.offline=1;$("#out").innerHTML=`<div class="card warn">Couldn't send it automatically (${esc(z.message||"no connection")}). Tap <b>Finish &amp; send</b> again to send the PDF yourself.</div>`}
+    $("#out").scrollIntoView({behavior:"smooth"});return}
+   if(t.id==="mkpdf"){$("#out").innerHTML=`<div class="card pdfok"><b>Your bid PDF is ready${blank?` (${blank} area${blank===1?"":"s"} at $0)`:""}.</b><br>Send it to ${esc(B.who||"us")}${B.to?` at <b>${esc(B.to)}</b>`:""}${B.sms?` or text it to <b>${esc(B.sms)}</b>`:""}.
+     ${canShare?`<button class="btn" id="share">Send the PDF</button>`:""}<button class="btn ${canShare?"sec":""}" id="dlpdf">Download the PDF</button>${B.to?`<p style="font-size:14px;color:var(--mute)">After downloading, attach it to an email to ${esc(B.to)}.</p>`:""}</div>`;$("#out").scrollIntoView({behavior:"smooth"});return}
+   if(t.id==="share"){try{await navigator.share({files:[file],title:`Labor bid — ${B.a}`,text:`Labor bid for ${B.a} (${B.id}) — total ${"$"+Math.round(total()).toLocaleString("en-US")}`})}catch(z){}return}
+   const u=URL.createObjectURL(file),a=document.createElement("a");a.href=u;a.download=fname();document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);return}
+  const body=summary(),subj=`Re: Scope of Work — ${B.a} [${B.id}]`;
+  if(t.id==="email"){e.preventDefault();location.href="mailto:"+encodeURIComponent(B.to)+"?subject="+encodeURIComponent(subj)+"&body="+encodeURIComponent(body);$("#out").innerHTML='<div class="card done">Your mail app should open with your bid filled in — just hit Send.</div>'}
+  if(t.id==="sms"){e.preventDefault();const sep=/iPhone|iPad|Mac/.test(navigator.userAgent)?"&":"?";location.href="sms:"+encodeURIComponent(B.sms)+sep+"body="+encodeURIComponent(body);$("#out").innerHTML='<div class="card done">Your texts should open with your bid filled in — just hit Send.</div>'}
+  if(t.id==="copy"){try{await navigator.clipboard.writeText(body);t.textContent="Copied ✓ — paste it in a text or email"}catch{$("#out").innerHTML=`<pre>${esc(body)}</pre>`}}})}
+/* GC portal: sign in with the GC password, see every address sent to you */
+const ls=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k)||"";localStorage.setItem(k,v)}catch{return""}};
+async function gcCall(pass){const r=await fetch(BID_DESK_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"gcList",gcPass:pass})});return r.json()}
+function gcLogin(msg){$("#bar").hidden=true;$("#addr").textContent="Contractor portal";
+ $("#app").innerHTML=`<div class="card"><b style="font-size:19px">Sign in</b><p style="color:var(--mute);font-size:15px">Use the password 1HO Holdings gave you.</p><label for="gp">Password</label><input id="gp" type="password" style="text-align:left" autocomplete="current-password"><p class="warn">${esc(msg||"")}</p><button class="btn" id="gpGo">See my properties</button></div>`;
+ const go=async()=>{const p=$("#gp").value;try{const j=await gcCall(p);if(j.ok){ls("gc_pass",p);gcListView(j)}else gcLogin(j.error==="gcauth"?"Wrong password.":"Server said: "+j.error)}catch{gcLogin("Couldn't connect — check your signal and try again.")}};
+ $("#gpGo").onclick=go;$("#gp").onkeydown=e=>{if(e.key==="Enter")go()}}
+function gcListView(j){window.__gcList=j;$("#bar").hidden=true;$("#addr").textContent=(j.gc?j.gc+"'s ":"")+"properties";document.title="My properties";
+ const done=b=>{try{const st=JSON.parse(localStorage.getItem("bid-"+b.id)||"{}");return b.submittedAt||st.sentAt}catch{return b.submittedAt}};
+ $("#app").innerHTML=`${j.bids.length?j.bids.map((b,k)=>`<button class="room" data-open="${k}" style="display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;padding:0;cursor:pointer;font:inherit;color:inherit"><div class="rh" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>${esc(b.a)}</span><span style="font-size:14px;color:${done(b)?"#9fe3bf":"#FACD88"}">${done(b)?"Bid sent ✓":"Needs your bid"}</span></div><div class="rb" style="color:var(--mute);font-size:15px">${b.r.length} area${b.r.length===1?"":"s"}${b.du?" · due "+esc(b.du):""}${b.submittedAt?" · sent "+esc(new Date(b.submittedAt).toLocaleDateString()):""}</div></button>`).join(""):`<div class="card">Nothing waiting on you right now.</div>`}
+ <button class="btn sec" id="gcOut">Sign out</button>`}
+document.addEventListener("click",async e=>{const t=e.target.closest("button");if(!t)return;
+ if(t.dataset.open!==undefined){const b=window.__gcList.bids[+t.dataset.open];openBid({...b,api:BID_DESK_API,portal:true});wire();return}
+ if(t.id==="back"){const p=ls("gc_pass");try{const j=await gcCall(p);j.ok?gcListView(j):gcLogin()}catch{gcListView(window.__gcList)}return}
+ if(t.id==="gcOut"){try{localStorage.removeItem("gc_pass")}catch{}gcLogin();return}});
+(async()=>{
+ if(location.hash&&location.hash.length>2){let b;try{b=await decode(location.hash)}catch{$("#app").innerHTML='<div class="card" style="text-align:center;padding:28px 18px"><b style="font-size:19px">Open this from your bid link</b><p style="color:#567080">This page fills in from the link in your Scope of Work email or text — each property has its own link. Tap that link instead of opening this page directly.</p></div>';return}openBid(b);wire();return}
+ if(!BID_DESK_API){$("#app").innerHTML='<div class="card" style="text-align:center;padding:28px 18px"><b style="font-size:19px">Open this from your bid link</b><p style="color:#567080">This page fills in from the link in your Scope of Work email or text — each property has its own link. Tap that link instead of opening this page directly.</p></div>';return}
+ const p=ls("gc_pass");if(p){try{const j=await gcCall(p);if(j.ok){gcListView(j);return}}catch{}}gcLogin()})();
+
+}
+</script>
+</body>
+</html>
