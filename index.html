@@ -90,7 +90,7 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
  const PH=["Clean out","Demo","Plumbing","Electrical"],nk=t=>String(t||"").toLowerCase().replace(/[^a-z]/g,"");
  const ph=t=>{const k=nk(t);return PH.findIndex(p=>{const q=nk(p);return k===q||k===q+"s"||(q==="demo"&&k==="demolition")||(q==="cleanout"&&(k==="trashout"||k==="cleanup"))})};
  const xs=S.x.filter(x=>x.d.trim()||num(x.l)).map((x,k)=>({...x,k}));
- const ORD=["Exterior","Clean out","Demo","Plumbing","Electrical","Kitchen","Living room","Bedroom","Bathroom","Half bath"];
+ const ORD=["Exterior","Garage","Clean out","Demo","Plumbing","Electrical","Mechanicals","Basement","Kitchen","Living room","Bedroom","Bathroom","Half bath"];
  const rk=name=>{const p=ph(name);if(p>=0)return ORD.indexOf(PH[p]);const nm=String(name||"").toLowerCase();const i=ORD.findIndex(o=>nm===o.toLowerCase()||nm.startsWith(o.toLowerCase()+" "));return i<0?100:i};
  const ents=B.r.map((r,i)=>({room:r,i,rank:rk(r[0]),adds:[]}));const loose=[];
  for(const x of xs){const a=nk(x.a);const e=a&&ents.find(e=>e.room&&nk(e.room[0])===a);if(e){e.adds.push(x);continue}
