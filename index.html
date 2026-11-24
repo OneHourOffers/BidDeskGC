@@ -45,6 +45,7 @@ pre{white-space:pre-wrap;font:14px/1.4 ui-monospace,monospace;background:#f3f6f8
 .subt{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:15px;font-weight:600;color:var(--ink)}.subt input{width:24px;height:24px;min-height:0;accent-color:var(--petrol)}
 .osub{margin:0 0 10px;padding:10px 12px;background:#fff6e6;border:1px solid #f3dcaa;border-radius:10px;font-size:15px}
 .recf{margin-top:8px;padding:10px;border:1px dashed #e0b25a;border-radius:10px;background:#fffdf6}.recst{margin:0 0 8px;font-size:14px;padding:8px 10px;border-radius:8px;background:#fff6e6}.recst.approved{background:#dff5ea;color:#0f7a4b}.recst.declined{background:#fde6e3;color:#b23a2e}
+.fincard{background:#f8fbfc}.finrow{padding:8px 0;border-top:1px solid var(--line);font-size:15px}.finrow:first-of-type{border-top:0}.fmeta{color:var(--mute);font-size:13px}.finrow a{font-size:14px;font-weight:700;color:var(--petrol)}
 </style>
 </head>
 <body>
@@ -114,6 +115,10 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
   e.adds.forEach(addRow)}
  if(loose.length){need(26);pg.drawRectangle({x:L,y:y-22,width:R-L,height:22,color:pale});T("OTHER ADDITIONS BY CONTRACTOR",L+6,y-15,{bold:true,size:9});y-=22;
   loose.forEach(x=>{x.d=(x.a.trim()?x.a.trim()+": ":"")+(x.d.trim()||"Additional work");addRow(x)})}
+ if((B.f||[]).length){need(26);pg.drawRectangle({x:L,y:y-22,width:R-L,height:22,color:pale});T("FINISHES (per 1HO Holdings)",L+6,y-15,{bold:true,size:9});y-=22;
+  for(const f of B.f){const txt=[[f[1],f[2]].filter(Boolean).join(" — "),f[4]?"Where: "+f[4]:"",f[5],f[3]].filter(Boolean).join("\n");const ls=wrap(txt,C[4]-C[2]-10,9),h=Math.max(ls.length*11+8,22);need(h);
+   pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});pg.drawLine({start:{x:C[2],y},end:{x:C[2],y:y-h},thickness:.6,color:line});
+   wrap(f[0],C[2]-L-10,9,FB).forEach((l,j)=>T(l,L+5,y-13-j*11,{bold:true,size:9}));ls.forEach((l,j)=>T(l,C[2]+5,y-13-j*11,{size:9}));y-=h}}
  need(34);pg.drawRectangle({x:L,y:y-28,width:R-L,height:28,color:pet});T("TOTAL LABOR",C[2]+5,y-19,{bold:true,size:12,color:white});RT(money(total()),C[4]-8,y-19,{bold:true,size:13,color:white});
  const tf=form.createTextField("total");tf.setText(String(Math.round(total())));tf.addToPage(pg,{x:L+1,y:y-27,width:1,height:1,borderWidth:0});y-=44;
  if(y<200)newPage();
@@ -131,6 +136,7 @@ function summary(){const out=[`LABOR BID ${B.id} — ${B.a}`,""];
 function render(){
  $("#app").innerHTML=`${B.portal?'<button class="btn sec" id="back" style="margin-top:0">← All my properties</button>':""}<div class="card facts">${B.du?`<div>Need it by <b>${esc(B.du)}</b></div>`:""}${B.ac?`<div>Access: <b>${esc(B.ac)}</b></div>`:""}${B.who?`<div>From: <b>${esc(B.who)}</b></div>`:""}</div>
  <div class="card how"><b>How this works:</b> read each area, type your labor price in its yellow box, add anything we missed at the bottom, then tap <b>Finish &amp; send</b> to get your bid as a PDF to send us. Your numbers save on this phone as you go.</div>
+ ${(B.f||[]).length?`<div class="card fincard"><b style="font-size:17px">Finishes for this house</b><p style="margin:2px 0 8px;font-size:14px;color:var(--mute)">Bid your labor using these.</p>${B.f.map(f=>`<div class="finrow"><b>${esc(f[0])}</b><div>${esc([f[1],f[2]].filter(Boolean).join(" — "))}</div>${f[4]?`<div class="fmeta">${esc(f[4])}</div>`:""}${f[5]?`<div class="fmeta">${esc(f[5])}</div>`:""}${/^https:\/\//.test(f[3]||"")?`<a href="${esc(f[3])}" target="_blank" rel="noopener">View product ↗</a>`:""}</div>`).join("")}</div>`:""}
  ${B.r.map((r,i)=>`<div class="room"><div class="rh">${i+1}. ${esc(r[0])}</div><div class="rb">${r[1]?`<p class="work">${esc(r[1])}</p>`:""}${r[2]&&r[2].length?`<p class="inc">Includes: ${esc(r[2].join(", "))}</p>`:""}${r[4]?`<div class="osub"><b>Sub we chose — please coordinate:</b><br>${esc([r[4].c,r[4].n].filter(Boolean).join(" — "))}${r[4].t?" · "+esc(r[4].t):""}<br>${[r[4].p?`<a href="tel:${esc(r[4].p)}">${esc(r[4].p)}</a>`:"",r[4].e?`<a href="mailto:${esc(r[4].e)}">${esc(r[4].e)}</a>`:""].filter(Boolean).join(" · ")}</div>`:""}
   <label for="p${i}">Labor $ for ${esc(r[0])}</label><input id="p${i}" data-i="${i}" inputmode="decimal" enterkeyhint="next" value="${esc(S.p[i]??"")}" placeholder="0">
   ${r[4]?"":`${r[5]?`<div class="recst ${esc(r[5].s)}">Your sub recommendation: <b>${esc(r[5].c||r[5].n||"")}</b> — ${r[5].s==="approved"?"approved by 1HO ✓":r[5].s==="declined"?"declined by 1HO":"waiting on 1HO approval"}</div>`:""}
