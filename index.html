@@ -46,6 +46,9 @@ pre{white-space:pre-wrap;font:14px/1.4 ui-monospace,monospace;background:#f3f6f8
 .osub{margin:0 0 10px;padding:10px 12px;background:#fff6e6;border:1px solid #f3dcaa;border-radius:10px;font-size:15px}
 .recf{margin-top:8px;padding:10px;border:1px dashed #e0b25a;border-radius:10px;background:#fffdf6}.recst{margin:0 0 8px;font-size:14px;padding:8px 10px;border-radius:8px;background:#fff6e6}.recst.approved{background:#dff5ea;color:#0f7a4b}.recst.declined{background:#fde6e3;color:#b23a2e}
 .fincard{background:#f8fbfc}.finrow{padding:8px 0;border-top:1px solid var(--line);font-size:15px}.finrow:first-of-type{border-top:0}.fmeta{color:var(--mute);font-size:13px}.finrow a{font-size:14px;font-weight:700;color:var(--petrol)}
+.co{border:2px solid var(--yb);background:var(--y)}.conote{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px;margin-bottom:8px}
+.corow{display:grid;grid-template-columns:minmax(0,1fr) 70px 76px 86px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line);font-size:15px}.corow span:nth-child(2){color:var(--mute);text-align:right}.corow span:nth-child(3){text-align:right}.corow input{min-height:42px;font-size:16px;text-align:right;padding:4px 8px;width:100%;box-sizing:border-box}
+.cohead{font-size:12px;font-weight:700;color:var(--mute);border-top:0}.cotot{font-weight:800;border-top:2px solid var(--line)}.cotot span:last-child{text-align:right;padding-right:8px}
 </style>
 </head>
 <body>
@@ -133,8 +136,28 @@ function summary(){const out=[`LABOR BID ${B.id} — ${B.a}`,""];
  const xs=S.x.filter(x=>x.d.trim()||num(x.l));if(xs.length){out.push("");xs.forEach(x=>out.push(`+ ${x.a.trim()?x.a.trim()+": ":""}${x.d.trim()||"Additional work"} - ${Math.round(num(x.l))}`))}
  out.push("",`Total labor - ${Math.round(total())}`);if(S.days)out.push(`Timeline ${S.days} working days`);if(S.start)out.push(`Start: ${S.start}`);
  if(S.notes.trim())out.push(`Notes: ${S.notes.trim().replace(/\n+/g," ")}`);if(S.name.trim())out.push(`— ${S.name.trim()}`);return out.join("\n")}
+/* 1HO's counter-offer: accept it or send your numbers back */
+function coHTML(){const c=B.co;const L=c.l||[];
+ return`<div class="card co" id="coCard"><b style="font-size:19px">1HO sent a counter-offer</b><p style="margin:4px 0 8px;font-size:15px;color:var(--mute)">Your bid ${money(c.h)} → their offer <b style="color:var(--ink)">${money(c.o)}</b>. Accept it, or change any line and send your numbers back.</p>
+ ${c.n?`<div class="conote">“${esc(c.n)}”</div>`:""}
+ <div class="corow cohead"><span>Line</span><span>Your bid</span><span>Their offer</span><span>Your answer</span></div>
+ ${L.map((l,i)=>`<div class="corow"><span>${esc(l[1])}</span><span>${money(l[2])}</span><span><b>${money(l[3])}</b></span><input data-coi="${i}" inputmode="decimal" value="${Math.round(l[3])}" aria-label="Your answer for ${esc(l[1])}"></div>`).join("")}
+ <div class="corow cotot"><span>Total</span><span>${money(c.h)}</span><span>${money(c.o)}</span><span id="coT">${money(c.o)}</span></div>
+ <button class="btn" id="coAccept">Accept ${money(c.o)}</button>
+ <label for="coNote" style="margin-top:12px;display:block">Note back to 1HO (optional)</label><textarea id="coNote" rows="2" style="width:100%;box-sizing:border-box;font:16px Archivo,sans-serif;padding:10px;border:1px solid var(--line);border-radius:10px"></textarea>
+ <button class="btn sec" id="coBack">Send my numbers back</button><p id="coOut" style="font-size:15px;color:var(--mute)"></p></div>`}
+const coTot=()=>[...document.querySelectorAll("[data-coi]")].reduce((s,el)=>s+num(el.value),0);
+document.addEventListener("input",e=>{if(e.target.dataset.coi!==undefined){const T=$("#coT");if(T)T.textContent=money(coTot())}});
+document.addEventListener("click",async e=>{const t=e.target.closest("button");if(!t||(t.id!=="coAccept"&&t.id!=="coBack")||t.disabled)return;
+ const accept=t.id==="coAccept",out=$("#coOut");if(!B.k){out.textContent="Open this property from your portal sign-in to answer.";return}
+ const lines={};if(!accept)document.querySelectorAll("[data-coi]").forEach(el=>{lines[B.co.l[+el.dataset.coi][0]]=String(num(el.value))});
+ const amt=accept?B.co.o:coTot();if(!t.dataset.sure){t.dataset.sure=1;t.textContent=accept?`Tap again to accept ${money(amt)}`:`Tap again to send ${money(amt)}`;return}
+ t.disabled=true;t.textContent="Sending…";
+ try{const r=await fetch(B.api||BID_DESK_API,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"counterReply",id:B.id,bidKey:B.k,accept,lines,note:($("#coNote")?.value||"").trim()})});const j=await r.json();if(!j.ok)throw new Error(j.error||"Server error");
+  B.co=null;B.cs=accept?"accepted":"countered";$("#coCard").outerHTML=`<div class="card done" style="font-size:17px">✓ ${accept?`You accepted ${money(amt)}. 1HO has been notified.`:`Sent ${money(amt)} back to 1HO. They'll get back to you.`}</div>`}
+ catch(x){t.disabled=false;delete t.dataset.sure;t.textContent="Try again";out.textContent="Couldn't send — "+(x.message||"check your signal")}});
 function render(){
- $("#app").innerHTML=`${B.portal?'<button class="btn sec" id="back" style="margin-top:0">← All my properties</button>':""}<div class="card facts">${B.du?`<div>Need it by <b>${esc(B.du)}</b></div>`:""}${B.ac?`<div>Access: <b>${esc(B.ac)}</b></div>`:""}${B.who?`<div>From: <b>${esc(B.who)}</b></div>`:""}</div>
+ $("#app").innerHTML=`${B.portal?'<button class="btn sec" id="back" style="margin-top:0">← All my properties</button>':""}${B.co&&(B.co.l||[]).length?coHTML():B.cs==="accepted"?`<div class="card done">✓ You accepted 1HO's counter-offer on this one.</div>`:""}<div class="card facts">${B.du?`<div>Need it by <b>${esc(B.du)}</b></div>`:""}${B.ac?`<div>Access: <b>${esc(B.ac)}</b></div>`:""}${B.who?`<div>From: <b>${esc(B.who)}</b></div>`:""}</div>
  <div class="card how"><b>How this works:</b> read each area, type your labor price in its yellow box, add anything we missed at the bottom, then tap <b>Finish &amp; send</b> to get your bid as a PDF to send us. Your numbers save on this phone as you go.</div>
  ${(B.f||[]).length?`<div class="card fincard"><b style="font-size:17px">Finishes for this house</b><p style="margin:2px 0 8px;font-size:14px;color:var(--mute)">Bid your labor using these.</p>${B.f.map(f=>`<div class="finrow"><b>${esc(f[0])}</b><div>${esc([f[1],f[2]].filter(Boolean).join(" — "))}</div>${f[4]?`<div class="fmeta">${esc(f[4])}</div>`:""}${f[5]?`<div class="fmeta">${esc(f[5])}</div>`:""}${/^https:\/\//.test(f[3]||"")?`<a href="${esc(f[3])}" target="_blank" rel="noopener">View product ↗</a>`:""}</div>`).join("")}</div>`:""}
  ${B.r.map((r,i)=>`<div class="room"><div class="rh">${i+1}. ${esc(r[0])}</div><div class="rb">${r[1]?`<p class="work">${esc(r[1])}</p>`:""}${r[2]&&r[2].length?`<p class="inc">Includes: ${esc(r[2].join(", "))}</p>`:""}${r[4]?`<div class="osub"><b>Sub we chose — please coordinate:</b><br>${esc([r[4].c,r[4].n].filter(Boolean).join(" — "))}${r[4].t?" · "+esc(r[4].t):""}<br>${[r[4].p?`<a href="tel:${esc(r[4].p)}">${esc(r[4].p)}</a>`:"",r[4].e?`<a href="mailto:${esc(r[4].e)}">${esc(r[4].e)}</a>`:""].filter(Boolean).join(" · ")}</div>`:""}
@@ -198,7 +221,7 @@ function gcLogin(msg){$("#bar").hidden=true;$("#addr").textContent="Contractor p
  $("#gpGo").onclick=go;$("#gp").onkeydown=e=>{if(e.key==="Enter")go()}}
 function gcListView(j){window.__gcList=j;$("#bar").hidden=true;$("#addr").textContent=(j.gc?j.gc+"'s ":"")+"properties";document.title="My properties";
  const done=b=>{try{const st=JSON.parse(localStorage.getItem("bid-"+b.id)||"{}");return b.submittedAt||st.sentAt}catch{return b.submittedAt}};
- $("#app").innerHTML=`${j.bids.length?j.bids.map((b,k)=>`<button class="room" data-open="${k}" style="display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;padding:0;cursor:pointer;font:inherit;color:inherit"><div class="rh" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>${esc(b.a)}</span><span style="font-size:14px;color:${done(b)?"#9fe3bf":"#FACD88"}">${done(b)?"Bid sent ✓":"Needs your bid"}</span></div><div class="rb" style="color:var(--mute);font-size:15px">${b.r.length} area${b.r.length===1?"":"s"}${b.du?" · due "+esc(b.du):""}${b.submittedAt?" · sent "+esc(new Date(b.submittedAt).toLocaleDateString()):""}</div></button>`).join(""):`<div class="card">Nothing waiting on you right now.</div>`}
+ $("#app").innerHTML=`${j.bids.length?j.bids.map((b,k)=>`<button class="room" data-open="${k}" style="display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;padding:0;cursor:pointer;font:inherit;color:inherit"><div class="rh" style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>${esc(b.a)}</span><span style="font-size:14px;color:${b.co?"#FACD88":done(b)?"#9fe3bf":"#FACD88"}">${b.co?"Counter-offer — respond":b.cs==="accepted"?"Agreed ✓":done(b)?"Bid sent ✓":"Needs your bid"}</span></div><div class="rb" style="color:var(--mute);font-size:15px">${b.r.length} area${b.r.length===1?"":"s"}${b.du?" · due "+esc(b.du):""}${b.submittedAt?" · sent "+esc(new Date(b.submittedAt).toLocaleDateString()):""}</div></button>`).join(""):`<div class="card">Nothing waiting on you right now.</div>`}
  <button class="btn sec" id="gcOut">Sign out</button>`}
 document.addEventListener("click",async e=>{const t=e.target.closest("button");if(!t)return;
  if(t.dataset.open!==undefined){const b=window.__gcList.bids[+t.dataset.open];openBid({...b,api:BID_DESK_API,portal:true});wire();return}
