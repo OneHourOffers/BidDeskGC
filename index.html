@@ -85,17 +85,30 @@ async function bidPdf(){const P=window.PDFLib;if(!P)throw new Error("nolib");
  pg.drawLine({start:{x:L,y:H-82},end:{x:R,y:H-82},thickness:.6,color:line});y=H-100;
  for(const [k,v] of [["Property",B.a],["Prepared for",B.who||"1HO Holdings LLC"],["Date",new Date().toLocaleDateString("en-US",{year:"numeric",month:"long",day:"numeric"})],["Bid ref",B.id]])if(v){T(k,L,y,{bold:true,color:mute,size:9.5});T(v,L+86,y);y-=15}
  y-=8;head();
- B.r.forEach((r,i)=>{const desc=[r[1],r[2]&&r[2].length?"Includes: "+r[2].join(", ")+".":""].filter(Boolean).join("\n")||"Per walkthrough";
-  const ls=wrap(desc,C[3]-C[2]-10),an=wrap(r[0],C[2]-C[1]-10,9.5,FB),h=Math.max(Math.max(ls.length,an.length)*11.5+10,26);need(h);
-  pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-h},thickness:.6,color:line}));
-  T(String(i+1),C[0]+8,y-14,{size:9.5});an.forEach((l,k)=>T(l,C[1]+5,y-14-k*11.5,{bold:true,size:9.5}));ls.forEach((l,k)=>T(l,C[2]+5,y-14-k*11.5,{size:9.5}));
-  const v=num(S.p[i]);fld("labor|"+(r[3]||i),C[3]+4,y-22,C[4]-C[3]-8,16,v?money(v):"$0");y-=h});
- const xs=S.x.filter(x=>x.d.trim()||num(x.l));
- if(xs.length){need(26);pg.drawRectangle({x:L,y:y-22,width:R-L,height:22,color:pale});T("ADDED BY CONTRACTOR",L+6,y-15,{bold:true,size:9});y-=22;
-  xs.forEach((x,k)=>{const ls=wrap((x.a.trim()?x.a.trim()+": ":"")+(x.d.trim()||"Additional work"),C[3]-C[1]-10),h=Math.max(ls.length*11.5+10,26);need(h);
-   pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});pg.drawLine({start:{x:C[3],y},end:{x:C[3],y:y-h},thickness:.6,color:line});
-   T("+",C[0]+9,y-14,{bold:true});ls.forEach((l,j)=>T(l,C[1]+5,y-14-j*11.5,{size:9.5}));
-   fld("addArea|"+k,C[0]+1,y-h+1,1,1,x.a.trim());fld("addDesc|"+k,C[0]+3,y-h+1,1,1,x.d.trim()||"Additional work");fld("addLabor|"+k,C[3]+4,y-22,C[4]-C[3]-8,16,num(x.l)?money(num(x.l)):"$0");y-=h})}
+ /* chronological: Clean out, Demo, Plumbing, Electrical, then each room; contractor additions sit under their area */
+ const PH=["Clean out","Demo","Plumbing","Electrical"],nk=t=>String(t||"").toLowerCase().replace(/[^a-z]/g,"");
+ const ph=t=>{const k=nk(t);return PH.findIndex(p=>{const q=nk(p);return k===q||k===q+"s"||(q==="demo"&&k==="demolition")||(q==="cleanout"&&(k==="trashout"||k==="cleanup"))})};
+ const xs=S.x.filter(x=>x.d.trim()||num(x.l)).map((x,k)=>({...x,k}));
+ const ents=B.r.map((r,i)=>({room:r,i,rank:ph(r[0])<0?100:ph(r[0]),adds:[]}));const loose=[];
+ for(const x of xs){const a=nk(x.a);const e=a&&ents.find(e=>e.room&&nk(e.room[0])===a);if(e){e.adds.push(x);continue}
+  const p=ph(x.a);if(p>=0){let g=ents.find(e=>!e.room&&e.rank===p);if(!g){g={name:PH[p],rank:p,adds:[]};ents.push(g)}g.adds.push(x);continue}loose.push(x)}
+ ents.forEach((e,o)=>e.o=o);ents.sort((a,b)=>a.rank-b.rank||a.o-b.o);
+ const addRow=x=>{const ls=wrap(x.d.trim()||"Additional work",C[3]-C[2]-10),h=Math.max(ls.length*11.5+10,24);need(h);
+   pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,color:P.rgb(1,.976,.92),borderColor:line,borderWidth:.6});[C[2],C[3]].forEach(xx=>pg.drawLine({start:{x:xx,y},end:{x:xx,y:y-h},thickness:.6,color:line}));
+   T("+ added by contractor",C[1]+5,y-14,{size:8,color:mute});ls.forEach((l,j)=>T(l,C[2]+5,y-14-j*11.5,{size:9.5}));
+   fld("addArea|"+x.k,C[0]+1,y-h+1,1,1,x.a.trim());fld("addDesc|"+x.k,C[0]+3,y-h+1,1,1,x.d.trim()||"Additional work");fld("addLabor|"+x.k,C[3]+4,y-21,C[4]-C[3]-8,16,num(x.l)?money(num(x.l)):"$0");y-=h};
+ let n=0;
+ for(const e of ents){n++;
+  if(e.room){const r=e.room,i=e.i;const desc=[r[1],r[2]&&r[2].length?"Includes: "+r[2].join(", ")+".":""].filter(Boolean).join("\n")||"Per walkthrough";
+   const ls=wrap(desc,C[3]-C[2]-10),an=wrap(r[0],C[2]-C[1]-10,9.5,FB),h=Math.max(Math.max(ls.length,an.length)*11.5+10,26);need(h);
+   pg.drawRectangle({x:L,y:y-h,width:R-L,height:h,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-h},thickness:.6,color:line}));
+   T(String(n),C[0]+8,y-14,{size:9.5});an.forEach((l,k)=>T(l,C[1]+5,y-14-k*11.5,{bold:true,size:9.5}));ls.forEach((l,k)=>T(l,C[2]+5,y-14-k*11.5,{size:9.5}));
+   const v=num(S.p[i]);fld("labor|"+(r[3]||i),C[3]+4,y-22,C[4]-C[3]-8,16,v?money(v):"$0");y-=h}
+  else{need(26);pg.drawRectangle({x:L,y:y-24,width:R-L,height:24,borderColor:line,borderWidth:.6});[C[1],C[2],C[3]].forEach(x=>pg.drawLine({start:{x,y},end:{x,y:y-24},thickness:.6,color:line}));
+   T(String(n),C[0]+8,y-15,{size:9.5});T(e.name,C[1]+5,y-15,{bold:true,size:9.5});T("Added by contractor",C[2]+5,y-15,{size:9.5,color:mute});y-=24}
+  e.adds.forEach(addRow)}
+ if(loose.length){need(26);pg.drawRectangle({x:L,y:y-22,width:R-L,height:22,color:pale});T("OTHER ADDITIONS BY CONTRACTOR",L+6,y-15,{bold:true,size:9});y-=22;
+  loose.forEach(x=>{x.d=(x.a.trim()?x.a.trim()+": ":"")+(x.d.trim()||"Additional work");addRow(x)})}
  need(34);pg.drawRectangle({x:L,y:y-28,width:R-L,height:28,color:pet});T("TOTAL LABOR",C[2]+5,y-19,{bold:true,size:12,color:white});RT(money(total()),C[4]-8,y-19,{bold:true,size:13,color:white});
  const tf=form.createTextField("total");tf.setText(String(Math.round(total())));tf.addToPage(pg,{x:L+1,y:y-27,width:1,height:1,borderWidth:0});y-=44;
  if(y<200)newPage();
@@ -115,7 +128,7 @@ function render(){
  <div class="card how"><b>How this works:</b> read each area, type your labor price in its yellow box, add anything we missed at the bottom, then tap <b>Finish &amp; send</b> to get your bid as a PDF to send us. Your numbers save on this phone as you go.</div>
  ${B.r.map((r,i)=>`<div class="room"><div class="rh">${i+1}. ${esc(r[0])}</div><div class="rb">${r[1]?`<p class="work">${esc(r[1])}</p>`:""}${r[2]&&r[2].length?`<p class="inc">Includes: ${esc(r[2].join(", "))}</p>`:""}
   <label for="p${i}">Labor $ for ${esc(r[0])}</label><input id="p${i}" data-i="${i}" inputmode="decimal" enterkeyhint="next" value="${esc(S.p[i]??"")}" placeholder="0"></div></div>`).join("")}
- <div class="card"><b>Anything we missed?</b><div id="xs">${S.x.map((x,k)=>`<div class="add"><label for="xa${k}">Area</label><input id="xa${k}" data-x="${k}" data-f="a" value="${esc(x.a)}" placeholder="e.g. Kitchen, Porch">
+ <datalist id="areas">${["Clean out","Demo","Plumbing","Electrical"].concat(B.r.map(r=>r[0])).filter((v,i,a)=>a.indexOf(v)===i).map(v=>`<option value="${esc(v)}">`).join("")}</datalist><div class="card"><b>Anything we missed?</b><div id="xs">${S.x.map((x,k)=>`<div class="add"><label for="xa${k}">Area</label><input id="xa${k}" data-x="${k}" data-f="a" value="${esc(x.a)}" placeholder="Pick or type: Clean out, Demo, Kitchen…" list="areas">
   <div class="two"><div><label for="xd${k}">What needs done</label><input id="xd${k}" data-x="${k}" data-f="d" value="${esc(x.d)}"></div><div><label for="xl${k}">Labor $</label><input id="xl${k}" data-x="${k}" data-f="l" inputmode="decimal" value="${esc(x.l)}" placeholder="0"></div></div>
   <button class="x" data-rm="${k}">Remove</button></div>`).join("")}</div><button class="btn plus" id="addx">+ Add something we missed</button></div>
  <div class="card" id="finish"><label for="days">Timeline (working days)</label><input id="days" data-s="days" inputmode="numeric" value="${esc(S.days)}" style="text-align:left">
